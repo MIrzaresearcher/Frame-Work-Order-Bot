@@ -1,0 +1,36 @@
+name: NUPCO Framework Order Tracker
+
+on:
+  schedule:
+    # This runs at 05:00, 10:00, and 15:00 UTC (roughly morning, noon, and evening in KSA)
+    - cron: '0 5,10,15 * * *'
+  workflow_dispatch: # This allows you to run it manually to test it
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run Scraper
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python order_scraper.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "NupcoBot"
+          git config --global user.email "bot@nupco.com"
+          git add last_orders.txt
+          git commit -m "Update seen framework orders" || exit 0
+          git push
